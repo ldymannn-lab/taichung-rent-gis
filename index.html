@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TAICHUNG GIS · 大台中商用不動產租賃空間情資系統</title>
+    <title>崑鼎開發地產集團 · 大台中商用不動產租賃情資系統</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- MarkerCluster CSS -->
@@ -231,8 +231,52 @@
             border-color: #fff;
         }
 
+        /* 搜尋欄位專屬樣式 */
+        .search-section {
+            padding: 10px 14px 4px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .search-box-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .search-input {
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid #38bdf8;
+            border-radius: 6px;
+            padding: 7px 32px 7px 10px;
+            font-size: 12px;
+            color: #f8fafc;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+            background: #0f172a;
+        }
+        .search-input::placeholder {
+            color: #64748b;
+        }
+        .search-clear-btn {
+            position: absolute;
+            right: 8px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 14px;
+            cursor: pointer;
+            display: none;
+        }
+        .search-clear-btn:hover {
+            color: #fff;
+        }
+
         .filter-container {
-            padding: 12px 14px;
+            padding: 10px 14px 12px 14px;
             overflow-y: auto;
             flex: 1;
             display: flex;
@@ -357,7 +401,6 @@
         .popup-row span {
             color: #94a3b8;
         }
-        /* 亮眼加大租金樣式 */
         .popup-rent-highlight {
             font-size: 17px;
             font-weight: 800;
@@ -371,7 +414,6 @@
             color: #38bdf8;
         }
 
-        /* 備註外觀：精簡預覽 + 放大選項按鈕 */
         .popup-note-box {
             margin-top: 8px;
             background: rgba(255,255,255,0.05);
@@ -491,7 +533,7 @@
             background: #0369a1;
         }
 
-        /* 樹狀展開時放大的明顯點點樣式 */
+        /* 樹狀展開點點樣式 */
         .pin-cluster-item {
             width: 16px;
             height: 16px;
@@ -587,7 +629,6 @@
             color: #94a3b8;
         }
 
-        /* 亮眼加大招募橫幅 */
         .recruit-glow-banner {
             background: linear-gradient(90deg, #b45309, #d97706, #b45309);
             background-size: 200% auto;
@@ -648,7 +689,7 @@
 
     <header>
         <div class="header-title">
-            <span>TAICHUNG GIS · 大台中商用不動產租賃空間情資系統</span>
+            <span>崑鼎開發地產集團 · 大台中商用不動產租賃情資系統</span>
             <span class="tag">空間精確定位版</span>
         </div>
         <div class="header-status">
@@ -699,8 +740,19 @@
             </div>
         </div>
 
+        <!-- 關鍵字路段 / 門牌即時搜尋欄位 -->
+        <div class="search-section">
+            <div class="filter-group-title" style="margin-bottom: 5px;">
+                <span>🔍 路段 / 門牌快速跳轉</span>
+            </div>
+            <div class="search-box-wrapper">
+                <input type="text" id="keywordSearchInput" class="search-input" placeholder="例：崇德路三段、豐樂路...">
+                <button id="searchClearBtn" class="search-clear-btn" onclick="clearKeywordSearch()">&times;</button>
+            </div>
+        </div>
+
         <div class="filter-container">
-            <!-- 物件型態篩選 (店面/住家/透天) -->
+            <!-- 物件型態篩選 -->
             <div>
                 <div class="filter-group-title">租賃物件型態</div>
                 <div class="btn-grid" id="typeFilters">
@@ -818,7 +870,6 @@
         });
         L.control.zoom({ position: 'topright' }).addTo(map);
 
-        // 官方測繪電子地圖與航照圖
         const emapLayer = L.tileLayer('https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}', {
             maxZoom: 19,
             attribution: '&copy; <a href="https://maps.nlsc.gov.tw/" target="_blank">內政部國土測繪中心</a>'
@@ -921,7 +972,6 @@
                             <div class="company-slogan">${st.desc}</div>
                         </div>
 
-                        <!-- 顯眼加大招募橫幅 -->
                         <div class="recruit-glow-banner">
                             🔥 崑鼎人才招募中 🔥
                         </div>
@@ -963,13 +1013,13 @@
             }
         }
 
-        // ==================== 樹狀同點位展開 (Spiderfy) 最佳化 ====================
+        // ==================== 樹狀同點位展開 (Spiderfy) ====================
         const markersCluster = L.markerClusterGroup({
             chunkedLoading: true,
             maxClusterRadius: 40,
             spiderfyOnMaxZoom: true,
             showCoverageOnHover: false,
-            spiderfyDistanceMultiplier: 2.5, // 展開半徑加大，排版舒適
+            spiderfyDistanceMultiplier: 2.5,
             spiderLegPolylineOptions: {
                 weight: 2.5,
                 color: '#38bdf8',
@@ -983,11 +1033,13 @@
             type: 'ALL',
             year: 'ALL',
             district: 'ALL',
-            road: 'ALL'
+            road: 'ALL',
+            keyword: ''
         };
 
         window.addEventListener('DOMContentLoaded', () => {
             loadCSVFile('data.csv');
+            initKeywordSearch();
         });
 
         document.getElementById('csvFileInput').addEventListener('change', function(e) {
@@ -1026,7 +1078,40 @@
 
             document.getElementById('loadSummary').innerText = `已載入 ${rawData.length.toLocaleString()} 筆精確標的`;
             renderDistricts();
-            applyFilters();
+            applyFilters(false);
+        }
+
+        // ==================== 關鍵字快速搜尋功能 ====================
+        function initKeywordSearch() {
+            const input = document.getElementById('keywordSearchInput');
+            const clearBtn = document.getElementById('searchClearBtn');
+
+            input.addEventListener('input', function() {
+                const val = this.value.trim();
+                clearBtn.style.display = val.length > 0 ? 'block' : 'none';
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    executeKeywordSearch();
+                }
+            });
+        }
+
+        function executeKeywordSearch() {
+            const input = document.getElementById('keywordSearchInput');
+            const kw = input.value.trim();
+            activeFilters.keyword = kw;
+            // 執行篩選並平滑自動飛航跳轉視角
+            applyFilters(true);
+        }
+
+        function clearKeywordSearch() {
+            const input = document.getElementById('keywordSearchInput');
+            input.value = '';
+            document.getElementById('searchClearBtn').style.display = 'none';
+            activeFilters.keyword = '';
+            applyFilters(false);
         }
 
         function renderDistricts() {
@@ -1087,13 +1172,19 @@
             });
         }
 
-        function applyFilters() {
+        function applyFilters(shouldZoomToResult = false) {
             let filtered = rawData.filter(d => {
                 const use = d['主要用途'] || '';
                 const btype = d['建物型態'] || '';
                 const target = d['交易標的'] || '';
+                const addr = (d['土地區段位置-建物區段門牌'] || '') + ' ' + (d['Response_Address'] || '');
 
-                // 物件型態篩選 (店面 / 住家 / 透天)
+                // 關鍵字搜尋比對
+                if (activeFilters.keyword !== '') {
+                    if (!addr.includes(activeFilters.keyword)) return false;
+                }
+
+                // 物件型態篩選
                 if (activeFilters.type !== 'ALL') {
                     if (activeFilters.type === '店面') {
                         if (!(use.includes('店') || use.includes('商') || target.includes('店') || btype.includes('店') || btype.includes('辦公'))) return false;
@@ -1104,7 +1195,7 @@
                     }
                 }
 
-                // 交易年份篩選 (前 2~3 位為民國年)
+                // 交易年份篩選
                 if (activeFilters.year !== 'ALL') {
                     const dateStr = String(d['民國年月'] || '').trim();
                     if (!dateStr.startsWith(activeFilters.year)) return false;
@@ -1115,9 +1206,8 @@
                     return false;
                 }
 
-                // 路段篩選
+                // 核心路段清單篩選
                 if (activeFilters.road !== 'ALL') {
-                    const addr = (d['土地區段位置-建物區段門牌'] || '') + (d['Response_Address'] || '');
                     if (!addr.includes(activeFilters.road)) return false;
                 }
 
@@ -1128,15 +1218,14 @@
             document.getElementById('markerCount').innerText = filtered.length.toLocaleString();
 
             renderRoads(filtered);
-            renderMarkers(filtered);
+            renderMarkers(filtered, shouldZoomToResult);
         }
 
-        // ==================== 繪製點位與格式化租金 ====================
-        function renderMarkers(items) {
+        // ==================== 繪製點位 ====================
+        function renderMarkers(items, shouldZoomToResult = false) {
             markersCluster.clearLayers();
             const markers = [];
 
-            // 樹狀展開時放大的明顯同心圓點點 (16px)
             const markerIcon = L.divIcon({
                 className: 'custom-pin-wrapper',
                 html: `<div class="pin-cluster-item"></div>`,
@@ -1161,7 +1250,7 @@
                     ? `$ ${(rawUnit * 3.30578).toFixed(0)} <span style="font-size:11px;font-weight:400;color:#94a3b8;">元/坪/月</span>`
                     : '未揭露';
 
-                // 3. 承租坪數 (取到小數第二位，第二位為0則只顯示一位)
+                // 3. 承租坪數 (第二位為0則只顯示一位)
                 const rawArea = parseFloat(d['建物移轉總面積-平方公尺']);
                 let areaStr = '-';
                 if (!isNaN(rawArea) && rawArea > 0) {
@@ -1172,31 +1261,30 @@
                     areaStr = `${ping} 坪`;
                 }
 
-                // 4. 修正交易年月 (精準拆解民國年/月，支援 7 位與 5 位)
+                // 4. 正確拆解民國年月
                 let dateStr = '-';
                 if (d['民國年月']) {
                     const rawDate = String(d['民國年月']).trim();
-                    if (rawDate.length >= 6) { // 含日期 (例: 1140331 -> 114年3月)
+                    if (rawDate.length >= 6) {
                         const y = rawDate.slice(0, -4);
                         const m = parseInt(rawDate.slice(-4, -2), 10);
                         dateStr = `民國 ${y} 年 ${m} 月`;
-                    } else if (rawDate.length >= 4) { // 僅年月 (例: 11002 -> 110年2月)
+                    } else if (rawDate.length >= 4) {
                         const y = rawDate.slice(0, -2);
                         const m = parseInt(rawDate.slice(-2), 10);
                         dateStr = `民國 ${y} 年 ${m} 月`;
                     }
                 }
 
-                // 5. 樓層顯示修正 (去除 .0F 雜訊)
+                // 5. 樓層顯示修正
                 const rawFloor = d['移轉層次'] || '-';
                 let totalFloor = d['總層數'] ? String(d['總層數']).replace(/\.0+$/, '') : '-';
                 let floor = totalFloor !== '-' ? `${rawFloor} / ${totalFloor}F` : rawFloor;
-                floor = floor.replace(/\.0+F/g, 'F'); // 徹底確保 .0F 消失
+                floor = floor.replace(/\.0+F/g, 'F');
 
                 const address = d['土地區段位置-建物區段門牌'] || d['Response_Address'];
                 const note = (d['備註'] && d['備註'].trim() !== '') ? d['備註'].trim() : '無特殊備註';
 
-                // 安全轉義備註文字以放入按鈕事件
                 const safeNote = note.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 const safeAddress = address.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
@@ -1226,9 +1314,14 @@
 
             markersCluster.addLayers(markers);
 
-            if (activeFilters.district !== 'ALL' && markers.length > 0) {
+            // 當由關鍵字搜尋或行政區點擊觸發時，自動平滑飛航聚焦
+            if ((shouldZoomToResult || activeFilters.district !== 'ALL') && markers.length > 0) {
                 const group = new L.featureGroup(markers);
-                map.fitBounds(group.getBounds().pad(0.1));
+                map.fitBounds(group.getBounds().pad(0.12), {
+                    animate: true,
+                    duration: 1.0,
+                    maxZoom: 16
+                });
             }
         }
 
@@ -1238,7 +1331,7 @@
                 document.querySelectorAll('#typeFilters .btn-filter').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 activeFilters.type = this.dataset.type;
-                applyFilters();
+                applyFilters(false);
             });
         });
 
@@ -1247,14 +1340,14 @@
                 document.querySelectorAll('#yearFilters .btn-filter').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 activeFilters.year = this.dataset.year;
-                applyFilters();
+                applyFilters(false);
             });
         });
 
         function selectDistrict(dist) {
             activeFilters.district = dist;
             renderDistricts();
-            applyFilters();
+            applyFilters(true);
         }
 
         function resetDistrictFilter() {
@@ -1263,12 +1356,12 @@
 
         function selectRoad(road) {
             activeFilters.road = road;
-            applyFilters();
+            applyFilters(true);
         }
 
         function resetRoadFilter() {
             activeFilters.road = 'ALL';
-            applyFilters();
+            applyFilters(false);
         }
     </script>
 </body>
